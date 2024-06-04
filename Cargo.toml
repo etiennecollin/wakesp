@@ -1,0 +1,84 @@
+[package]
+name = "wol-esp32"
+version = "0.1.0"
+authors = ["etiennecollin <collin.etienne.contact@gmail.com>"]
+edition = "2021"
+license = "MIT"
+
+[features]
+default = [
+    "esp32c3",
+    "jtag",
+    "log",
+    "embassy",
+    "wifi",
+]
+
+log = [
+    "dep:log",
+    "esp-hal/log",
+    "esp-println/log",
+    "esp-backtrace/println",
+    "embassy-executor?/log",
+    "esp-wifi?/log",
+]
+
+defmt = [
+    "dep:defmt",
+    "esp-hal/defmt",
+    "esp-println/defmt-espflash",
+    "esp-backtrace/defmt",
+    "embassy-executor?/defmt",
+    "esp-wifi?/defmt",
+    "embassy-net?/defmt"
+]
+
+jtag = ["esp-println/jtag-serial"]
+uart = ["esp-println/uart"]
+
+esp32c3 = ["esp-hal/esp32c3", "esp-println/esp32c3", "esp-backtrace/esp32c3", "esp-wifi?/esp32c3"]
+
+embassy = [
+    "esp-hal/embassy",
+    "esp-hal/embassy-time-timg0",
+    "embassy-executor",
+    "embassy-time",
+    "embassy-executor/task-arena-size-40960"
+]
+
+wifi = [
+    "esp-wifi",
+    "esp-wifi/embassy-net",
+    "embassy-net",
+]
+
+[dependencies]
+esp-hal = { version = "0.17.0" }
+esp-println = { version = "0.9.1", default-features = false, features = ["critical-section", "colors"] }
+esp-backtrace = { version = "0.11.1", features = ["panic-handler", "exception-handler"]  }
+
+defmt = { version = "0.3.8", optional = true }
+log = { version = "0.4.21", optional = true }
+
+embassy-executor = { version = "0.5.0", package = "embassy-executor",features = [
+    "executor-thread", "integrated-timers", "arch-riscv32"], optional = true }
+embassy-time = { version = "0.3.0", optional = true }
+
+esp-wifi  = { version = "0.5.1", default-features = false, features = [
+    "wifi", "ipv4", "tcp", "udp", "icmp", "igmp", "dns", "dhcpv4"], optional = true }
+embassy-net = { version = "0.4.0", features = ["tcp", "udp", "dns", "dhcpv4", "medium-ethernet"], optional = true }
+esp-hal-embassy = "0.1.0"
+
+[profile.dev]
+# Rust debug is too slow. 
+# For debug builds always builds with some optimization
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1 # LLVM can perform better optimizations using a single thread
+debug = 2
+debug-assertions = false
+incremental = false
+lto = 'fat'
+opt-level = 's'
+overflow-checks = false
