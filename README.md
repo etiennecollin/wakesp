@@ -5,7 +5,7 @@ Wakesp (from the words `wake` and `esp`) is a firmware project for the ESP32-C3 
 ## Features
 
 - Dynamic DNS Updates: Manually update your DDNS provider with the latest IP address.
-- Wake-on-LAN: Send WOL pachets easily witha custom UDP interface to wake up devices on your network.
+- Wake-on-LAN: Send WOL packets easily with a custom UDP interface to wake up devices on your network.
 - Completely async without an OS thanks to [embassy](https://github.com/embassy-rs/embassy)
 - Rust Implementation: Benefit from the safety and performance of Rust.
 - ESP32-C3 Compatible: Designed specifically for the ESP32-C3 microcontroller.
