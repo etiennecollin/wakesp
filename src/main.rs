@@ -30,8 +30,11 @@ use esp_wifi::{
 };
 use udp::udp_task;
 
-const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
+const SSID: &str = env!("SSID");
+
+const DNS_ENABLE: &str = env!("DNS_ENABLE");
+const UDP_ENABLE: &str = env!("UDP_ENABLE");
 
 #[main]
 async fn main(spawner: Spawner) {
@@ -84,8 +87,12 @@ async fn main(spawner: Spawner) {
 
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(stack)).ok();
-    spawner.spawn(dns_updater_task(stack)).ok();
-    spawner.spawn(udp_task(stack)).ok();
+    if DNS_ENABLE == "true" || DNS_ENABLE == "1" {
+        spawner.spawn(dns_updater_task(stack)).ok();
+    }
+    if UDP_ENABLE == "true" || UDP_ENABLE == "1" {
+        spawner.spawn(udp_task(stack)).ok();
+    }
 }
 
 #[embassy_executor::task]

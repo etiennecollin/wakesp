@@ -40,11 +40,13 @@ SSID=""
 PASSWORD=""
 
 # For DNS update
+DNS_ENABLE="true"
 DNS_HOST="dynamicdns.park-your-domain.com"
 DNS_HTTP_REQUEST="GET /update?host=<HOST>&domain=<DOMAIN>&password=<PASSWORD>&ip= HTTP/1.1\r\nHost: dynamicdns.park-your-domain.com\r\nConnection: close\r\n\r\n"
 DNS_UPDATE_DELAY_HOURS="12"
 
 # UDP socket
+UDP_ENABLE="true"
 UDP_LISTEN_PORT="12345"
 WOL_BROADCAST_ADDR="255.255.255.255"
 WOL_MAC_ADDR="12:34:56:78:9a:bc"
