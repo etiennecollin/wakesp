@@ -16,7 +16,7 @@ Target for ESP32-C3
 rustup target add riscv32imc-unknown-none-elf
 ```
 
-Also install espflash to flash your board
+`espflash` to flash your board
 
 ```bash
 cargo install espflash
