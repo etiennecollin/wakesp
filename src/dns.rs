@@ -6,6 +6,8 @@ use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 
 const DNS_HOST: &str = env!("DNS_HOST");
 const DNS_HTTP_REQUEST: &[u8] = env!("DNS_HTTP_REQUEST").as_bytes();
+const DNS_UPDATE_DELAY_HOURS: &str = env!("DNS_UPDATE_DELAY_HOURS");
+const DNS_UPDATE_FALLBACK_DELAY_SECONDS: u64 = 43_200; // 12 hours
 
 #[embassy_executor::task]
 pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
@@ -101,8 +103,25 @@ pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
             break;
         }
 
-        // This should run every 12 hours
-        Timer::after(Duration::from_secs(43_200)).await;
+        // Wait for the next DNS update
+        let delay_seconds = match DNS_UPDATE_DELAY_HOURS.parse::<u64>() {
+            Ok(v) => v * 3_600, // Convert hours to seconds
+            Err(e) => {
+                log::error!(
+                    "DNS | Error parsing DNS_UPDATE_DELAY_HOURS to u64 -> {}: {}",
+                    e,
+                    DNS_UPDATE_DELAY_HOURS
+                );
+
+                log::error!(
+                    "DNS | Using fallback DNS update delay: {} seconds",
+                    DNS_UPDATE_FALLBACK_DELAY_SECONDS
+                );
+                DNS_UPDATE_FALLBACK_DELAY_SECONDS
+            }
+        };
+
+        Timer::after(Duration::from_secs(delay_seconds)).await;
     }
 }
 

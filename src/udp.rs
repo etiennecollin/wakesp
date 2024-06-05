@@ -8,8 +8,8 @@ use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 
 const UDP_LISTEN_PORT: &str = env!("UDP_LISTEN_PORT");
 const WOL_BROADCAST_ADDR: &str = env!("WOL_BROADCAST_ADDR");
+const WOL_BROADCAST_FALLBACK_ADDR: IpAddress = IpAddress::v4(255, 255, 255, 255);
 const WOL_MAC_ADDR: &str = env!("WOL_MAC_ADDR");
-const WOL_FALLBACK_BROADCAST_ADDR: IpAddress = IpAddress::v4(255, 255, 255, 255);
 
 #[embassy_executor::task]
 pub async fn udp_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
@@ -62,9 +62,9 @@ pub async fn udp_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>)
 
                 log::error!(
                     "UDP | Using fallback broadcast address: {}",
-                    WOL_FALLBACK_BROADCAST_ADDR
+                    WOL_BROADCAST_FALLBACK_ADDR
                 );
-                WOL_FALLBACK_BROADCAST_ADDR
+                WOL_BROADCAST_FALLBACK_ADDR
             }
         };
         let wol_target = IpEndpoint::new(broadcast_addr, 9);
