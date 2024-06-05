@@ -1,6 +1,14 @@
-# wol-esp32
+# wakesp
 
-WOL using ESP32-C3
+Wakesp (from the words `wake` and `esp`) is a firmware project for the ESP32-C3 microcontroller, written in Rust. This project allows the ESP32-C3 to update a dynamic DNS (DDNS) through manual TCP HTTP requests and wake up devices on your network using custom UDP requests (Wake-on-LAN).
+
+## Features
+
+- Dynamic DNS Updates: Manually update your DDNS provider with the latest IP address.
+- Wake-on-LAN: Send WOL pachets easily witha custom UDP interface to wake up devices on your network.
+- Completely async without an OS thanks to [embassy](https://github.com/embassy-rs/embassy)
+- Rust Implementation: Benefit from the safety and performance of Rust.
+- ESP32-C3 Compatible: Designed specifically for the ESP32-C3 microcontroller.
 
 ## Requirements
 

@@ -1,7 +1,8 @@
 [package]
-name = "wol-esp32"
+name = "wakesp"
 version = "0.1.0"
 authors = ["etiennecollin <collin.etienne.contact@gmail.com>"]
+repository = "https://github.com/etiennecollin/wakesp"
 edition = "2021"
 license = "MIT"
 
