@@ -1,6 +1,6 @@
 # wakesp
 
-Wakesp (from the words `wake` and `esp`) is a firmware project for the ESP32-C3 microcontroller, written in Rust. This project allows the ESP32-C3 to update a dynamic DNS (DDNS) through manual TCP HTTP requests and wake up devices on your network using custom UDP requests (Wake-on-LAN).
+Wakesp (from the words `wake` and `esp`) is a firmware project for the ESP32-C3 microcontroller, written in Rust. This project allows the ESP32-C3 to update a dynamic DNS (DDNS) through manual TCP HTTP requests and wake up devices on your network using Wake-on-LAN through a custom UDP request interface.
 
 ## Features
 
