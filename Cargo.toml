@@ -31,7 +31,7 @@ defmt = [
     "esp-println/defmt-espflash",
     "esp-wifi/defmt",
 ]
-jtag = ["esp-println/jtag-serial"]
+jtag = ["esp-println/jtag-serial", "esp-wifi/phy-enable-usb"]
 uart = ["esp-println/uart"]
 
 [dependencies]
@@ -45,7 +45,6 @@ esp-hal-embassy = { version = "0.1.0", features = ["time-timg0"] }
 esp-println = { version = "0.9.1", features = ["critical-section", "colors"] }
 esp-wifi = { version = "0.6.0", features = ["wifi", "ipv4", "tcp", "udp", "icmp", "igmp", "dns", "dhcpv4", "embassy-net"] }
 log = { version = "0.4.21", optional = true }
-
 
 [profile.dev]
 opt-level = "s"
