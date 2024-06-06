@@ -7,6 +7,7 @@
 - [Installation](#installation)
   - [Automatically Setting Environment Variables](#automatically-setting-environment-variables)
 - [UDP Requests](#udp-requests)
+  - [`ping`](#ping)
   - [`wol`](#wol)
 
 <!-- vim-markdown-toc -->
@@ -146,6 +147,11 @@ echo "<REQUEST>" | nc -uw1 <ESP32-C3_IP_ADDRESS> <UDP_LISTEN_PORT>
 
 The `"<REQUEST>"` has the following format: `"<COMMAND>,<ARG>"`.
 Here are the available commands:
+
+### `ping`
+
+- This command will simply ping the ESP32-C3 and return a status message. It can be used to test that the ESP32-C3 is working.
+  - Example: `echo "ping" | nc -uw1 <ESP32-C3_IP_ADDRESS> <UDP_LISTEN_PORT>"`
 
 ### `wol`
 

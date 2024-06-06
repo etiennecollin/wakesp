@@ -121,6 +121,10 @@ pub async fn udp_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>)
                     write_udp_response(&mut socket, b"WOL request submitted", &remote_end_point)
                         .await;
                 }
+                "ping" => {
+                    log::info!("UDP | Received ping request from: {}", remote_end_point);
+                    write_udp_response(&mut socket, b"Pong", &remote_end_point).await;
+                }
                 _ => {
                     log::warn!(
                         "UDP | Received invalid command in request from {}",
