@@ -5,6 +5,7 @@
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
+  - [Automatically Setting Environment Variables](#automatically-setting-environment-variables)
 - [UDP Requests](#udp-requests)
   - [`wol`](#wol)
 
@@ -40,6 +41,12 @@ rustup target add riscv32imc-unknown-none-elf
 cargo install espflash
 ```
 
+This repository
+
+```bash
+git clone https://github.com/etiennecollin/wakesp
+```
+
 ## Installation
 
 Set the following environment variables. These variables are used to configure the ESP32-C3 at compile time. Modify the values to match your needs:
@@ -64,7 +71,7 @@ Set the following environment variables. These variables are used to configure t
 - `WOL_BROADCAST_ADDR`: The broadcast address to send Wake-on-LAN packets to. Typically set to "255.255.255.255" to broadcast to all devices on the local network.
 - `WOL_MAC_ADDR`: The MAC address of the device you want to wake up using Wake-on-LAN.
 
-Here is an example of setting these variaples:
+Here is an example of setting these variables:
 
 ```bash
 # For WIFI
@@ -85,15 +92,47 @@ export WOL_BROADCAST_ADDR="255.255.255.255"
 export WOL_MAC_ADDR="12:34:56:78:9a:bc"
 ```
 
-In the same shell session (so that the variables are set), you can then flash and run your ESP32-C3 with:
+Now, make sure that your current working directory (output of `pwd` command) is the root of the cloned repository.
+You can then flash your ESP32-C3 with:
 
 ```bash
 cargo run --release
 ```
 
+> Run this last command in the same shell session you set the environment variables in.
+
 Follow the on-screen instructions. Note the IP address given to the ESP32-C3 by the router. It should be printed in the opened terminal as a log. You will be able to send UDP requests to it.
 
 Once the board is flashed, you may close your terminal and unplug your ESP32-C3. Power it via USB anywhere that is reached by the chosen WIFI network. The board will start working immediately once powered by USB.
+
+### Automatically Setting Environment Variables
+
+If you plan on flashing your board more than once, you could edit the file `./.cargo/config.toml` such that it sets the variables automatically. To do so, modify the `[env]` section of the file as follows to add your environment variables:
+
+```toml
+# ...
+[env]
+# ...
+
+# For WIFI
+HOSTNAME="myesp32"
+SSID="MyWiFiNetwork"
+PASSWORD="mywifipassword"
+
+# For DNS update
+DNS_ENABLE="true"
+DNS_HOST="dynamicdns.park-your-domain.com"
+DNS_HTTP_REQUEST="GET /update?host=<HOST>&domain=<DOMAIN>&password=<PASSWORD>&ip= HTTP/1.1\r\nHost: dynamicdns.park-your-domain.com\r\nConnection: close\r\n\r\n"
+DNS_UPDATE_DELAY_HOURS="12"
+
+# UDP socket
+UDP_ENABLE="true"
+UDP_LISTEN_PORT="12345"
+WOL_BROADCAST_ADDR="255.255.255.255"
+WOL_MAC_ADDR="12:34:56:78:9a:bc"
+
+# ...
+```
 
 ## UDP Requests
 
