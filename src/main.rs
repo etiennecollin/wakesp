@@ -4,10 +4,12 @@
 
 mod dns;
 mod udp;
+mod utils;
 
+use core::str::FromStr;
 use dns::dns_updater_task;
 use embassy_executor::Spawner;
-use embassy_net::{Config, Stack, StackResources};
+use embassy_net::{Config, DhcpConfig, Stack, StackResources};
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
 use esp_hal::{
@@ -30,6 +32,8 @@ use esp_wifi::{
 };
 use udp::udp_task;
 
+const HOSTNAME: &str = env!("HOSTNAME");
+const HOSTNAME_FALLBACK: &str = "wakesp";
 const PASSWORD: &str = env!("PASSWORD");
 const SSID: &str = env!("SSID");
 
@@ -69,8 +73,24 @@ async fn main(spawner: Spawner) {
     let (wifi_interface, controller) =
         esp_wifi::wifi::new_with_mode(&init, peripherals.WIFI, WifiStaDevice).unwrap();
 
+    // If hostname is empty or longer than 32 chars (limit from embassy_net),
+    // the device will use the fallback hostname
+    let hostname: &str;
+    let trimmed_hostname = HOSTNAME.trim();
+    if trimmed_hostname.is_empty() {
+        log::warn!("Falling back to default hostname. No hostname was provided");
+        hostname = HOSTNAME_FALLBACK;
+    } else if trimmed_hostname.len() > 32 {
+        log::warn!("Falling back to default hostname. Hostname has a maximum length of 32 bytes");
+        hostname = HOSTNAME_FALLBACK;
+    } else {
+        hostname = trimmed_hostname
+    }
+
     // Configure DHCPv4
-    let config = Config::dhcpv4(Default::default());
+    let mut dhcp_config = DhcpConfig::default();
+    dhcp_config.hostname = Some(heapless::String::from_str(hostname).unwrap());
+    let config = Config::dhcpv4(dhcp_config);
 
     // Create the wifi stack
     let stack = &*singleton!(:Stack<WifiDevice<'static, WifiStaDevice>> = Stack::new(

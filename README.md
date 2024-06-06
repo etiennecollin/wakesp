@@ -36,6 +36,7 @@ Set the following environment variables (modify the values to match your needs):
 
 ```bash
 # For WIFI
+HOSTNAME=""
 SSID=""
 PASSWORD=""
 

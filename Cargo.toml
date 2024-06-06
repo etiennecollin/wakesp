@@ -37,13 +37,14 @@ uart = ["esp-println/uart"]
 [dependencies]
 defmt = { version = "0.3.8", optional = true }
 embassy-executor = { version = "0.5.0", features=["nightly"]}
-embassy-net = { version = "0.4.0", features = ["tcp", "udp", "dns", "dhcpv4", "medium-ethernet"] }
+embassy-net = { version = "0.4.0", features = ["tcp", "udp", "dns", "dhcpv4", "dhcpv4-hostname", "medium-ethernet"] }
 embassy-time = { version = "0.3.0", features=["generic-queue-8"] }
 esp-backtrace = { version = "0.12.0", features = ["panic-handler", "exception-handler"] }
 esp-hal = { version = "0.18.0" }
 esp-hal-embassy = { version = "0.1.0", features = ["time-timg0"] }
 esp-println = { version = "0.9.1", features = ["critical-section", "colors"] }
 esp-wifi = { version = "0.6.0", features = ["wifi", "ipv4", "tcp", "udp", "icmp", "igmp", "dns", "dhcpv4", "embassy-net"] }
+heapless = "0.8.0"
 log = { version = "0.4.21", optional = true }
 
 [profile.dev]
