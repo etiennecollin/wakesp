@@ -1,3 +1,5 @@
+use crate::utils::{parse_ip_address, wait_for_connection};
+
 use embassy_net::{
     udp::{PacketMetadata, UdpSocket},
     IpAddress, IpEndpoint, Stack,
@@ -6,8 +8,6 @@ use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
 use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 
-use crate::utils::parse_ip_address;
-
 const UDP_LISTEN_PORT: &str = env!("UDP_LISTEN_PORT");
 const WOL_BROADCAST_ADDR: &str = env!("WOL_BROADCAST_ADDR");
 const WOL_BROADCAST_FALLBACK_ADDR: IpAddress = IpAddress::v4(255, 255, 255, 255);
@@ -15,61 +15,48 @@ const WOL_MAC_ADDR: &str = env!("WOL_MAC_ADDR");
 
 #[embassy_executor::task]
 pub async fn udp_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
+    // Parse the constant broadcast address
+    let broadcast_addr = match parse_ip_address(WOL_BROADCAST_ADDR) {
+        Ok(v) => v,
+        Err(e) => {
+            log::error!(
+                "UDP | Invalid broadcast address -> {}: {}",
+                e,
+                WOL_BROADCAST_ADDR
+            );
+
+            log::error!(
+                "UDP | Using fallback broadcast address: {}",
+                WOL_BROADCAST_FALLBACK_ADDR
+            );
+            WOL_BROADCAST_FALLBACK_ADDR
+        }
+    };
+    let wol_target = IpEndpoint::new(broadcast_addr, 9);
+
+    // Setup UDP socket
+    let mut rx_meta = [PacketMetadata::EMPTY; 16];
+    let mut rx_buffer = [0; 4096];
+    let mut tx_meta = [PacketMetadata::EMPTY; 16];
+    let mut tx_buffer = [0; 4096];
+    let mut buf = [0; 4096];
+
+    let mut socket = UdpSocket::new(
+        stack,
+        &mut rx_meta,
+        &mut rx_buffer,
+        &mut tx_meta,
+        &mut tx_buffer,
+    );
+
     loop {
-        loop {
-            if stack.is_link_up() {
-                break;
-            }
-            Timer::after(Duration::from_millis(500)).await;
-        }
-
-        log::info!("UDP | Waiting to get IP address...");
-        loop {
-            if let Some(config) = stack.config_v4() {
-                log::info!("UDP | Got IP: {}", config.address);
-                break;
-            }
-            Timer::after(Duration::from_millis(500)).await;
-        }
-
-        // Setup UDP socket
-        let mut rx_meta = [PacketMetadata::EMPTY; 16];
-        let mut rx_buffer = [0; 4096];
-        let mut tx_meta = [PacketMetadata::EMPTY; 16];
-        let mut tx_buffer = [0; 4096];
-        let mut buf = [0; 4096];
-
-        let mut socket = UdpSocket::new(
-            stack,
-            &mut rx_meta,
-            &mut rx_buffer,
-            &mut tx_meta,
-            &mut tx_buffer,
-        );
+        wait_for_connection(stack).await;
 
         if let Err(e) = socket.bind(UDP_LISTEN_PORT.parse::<u16>().unwrap_or(9)) {
             log::error!("UDP | Error binding to port: {:?}", e);
             socket.close();
             continue;
         }
-
-        let broadcast_addr = match parse_ip_address(WOL_BROADCAST_ADDR) {
-            Ok(v) => v,
-            Err(e) => {
-                log::error!(
-                    "UDP | Invalid broadcast address -> {}: {}",
-                    e,
-                    WOL_BROADCAST_ADDR
-                );
-
-                log::error!(
-                    "UDP | Using fallback broadcast address: {}",
-                    WOL_BROADCAST_FALLBACK_ADDR
-                );
-                WOL_BROADCAST_FALLBACK_ADDR
-            }
-        };
-        let wol_target = IpEndpoint::new(broadcast_addr, 9);
 
         loop {
             Timer::after(Duration::from_millis(1_000)).await;
@@ -118,8 +105,12 @@ pub async fn udp_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>)
                         socket.close();
                         break;
                     }
-                    write_udp_response(&mut socket, b"WOL request submitted", &remote_end_point)
-                        .await;
+                    write_udp_response(
+                        &mut socket,
+                        b"WOL request submitted to server",
+                        &remote_end_point,
+                    )
+                    .await;
                 }
                 "ping" => {
                     log::info!("UDP | Received ping request from: {}", remote_end_point);
@@ -144,12 +135,13 @@ pub async fn udp_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>)
     }
 }
 
+/// Send a Wake-on-LAN packet to the broadcast address for the specified MAC address.
 async fn send_wol_packet(
     socket: &mut UdpSocket<'_>,
     wol_target: &IpEndpoint,
-    args: &Option<&str>,
+    mac_addr: &Option<&str>,
 ) -> Result<(), ()> {
-    let mac_addr = match args {
+    let mac_addr = match mac_addr {
         Some(v) => v,
         None => {
             log::warn!(
@@ -220,6 +212,7 @@ async fn write_udp_response(socket: &mut UdpSocket<'_>, message: &[u8], endpoint
     }
 }
 
+/// Parse a UDP request message into a command and optional arguments separated by a comma `","`.
 async fn parse_udp_request(request: &str) -> (&str, Option<&str>) {
     let mut parts = request.split(',');
 
@@ -242,6 +235,8 @@ async fn parse_udp_request(request: &str) -> (&str, Option<&str>) {
     (command, arg)
 }
 
+/// Create a Wake-on-LAN packet from a MAC address.
+/// The packet is a 102-byte array with the first 6 bytes set to 0xFF and the MAC address repeated 16 times.
 async fn create_wol_packet(mac_addr: &str) -> Result<[u8; 102], &str> {
     // Parse the MAC address
     let mut mac_bytes = [0u8; 6];

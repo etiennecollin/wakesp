@@ -117,7 +117,7 @@ async fn main(spawner: Spawner) {
 
 #[embassy_executor::task]
 async fn connection(mut controller: WifiController<'static>) {
-    log::info!("SYS | Start connection task");
+    log::info!("SYS | Started connection task");
     log::info!(
         "SYS | Device capabilities: {:?}",
         controller.get_capabilities()

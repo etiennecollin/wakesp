@@ -61,9 +61,9 @@ Set the following environment variables. These variables are used to configure t
 **DNS Update Configuration**
 
 - `DNS_ENABLE`: A flag to enable or disable DNS updates. Set to "true" or "1" to enable.
+- `DNS_CHECK_DELAY`: The interval, in seconds, at which the DDNS should be updated.
 - `DNS_HOST`: The hostname of the DDNS provider's update service.
 - `DNS_HTTP_REQUEST`: The HTTP request format for updating the DDNS. Customize with your host, domain, and password details.
-- `DNS_UPDATE_DELAY_HOURS`: The interval, in hours, at which the DDNS should be updated.
 
 **UDP Socket Configuration**
 
@@ -82,9 +82,9 @@ export PASSWORD="mywifipassword"
 
 # For DNS update
 export DNS_ENABLE="true"
+export DNS_CHECK_DELAY="60"
 export DNS_HOST="dynamicdns.park-your-domain.com"
 export DNS_HTTP_REQUEST="GET /update?host=<HOST>&domain=<DOMAIN>&password=<PASSWORD>&ip= HTTP/1.1\r\nHost: dynamicdns.park-your-domain.com\r\nConnection: close\r\n\r\n"
-export DNS_UPDATE_DELAY_HOURS="12"
 
 # UDP socket
 export UDP_ENABLE="true"
@@ -122,9 +122,9 @@ PASSWORD="mywifipassword"
 
 # For DNS update
 DNS_ENABLE="true"
+DNS_CHECK_DELAY="60"
 DNS_HOST="dynamicdns.park-your-domain.com"
 DNS_HTTP_REQUEST="GET /update?host=<HOST>&domain=<DOMAIN>&password=<PASSWORD>&ip= HTTP/1.1\r\nHost: dynamicdns.park-your-domain.com\r\nConnection: close\r\n\r\n"
-DNS_UPDATE_DELAY_HOURS="12"
 
 # UDP socket
 UDP_ENABLE="true"
