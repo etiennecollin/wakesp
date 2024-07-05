@@ -9,8 +9,11 @@ use esp_backtrace as _;
 use esp_println::println;
 use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::FnvIndexMap;
+use html_responses::{HTML_HEADER, HTML_MENU, HTML_TAIL};
 use wol_utils::wol_command;
 
+/// The HTTP headers for the response.
+const HTTP_HEADERS: &[u8] = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n";
 /// The port on which the device will listen for HTTP requests.
 const HTTP_LISTEN_PORT: &str = env!("HTTP_LISTEN_PORT");
 /// The fallback port on which the device will listen for HTTP requests.
@@ -110,7 +113,7 @@ pub async fn http_server_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
 async fn handle_http_query(
     stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>,
     query: &str,
-) -> Result<&'static str, ()> {
+) -> Result<&'static [u8], ()> {
     // Parse the command and arguments
     let full_command = query.split_whitespace().nth(1).unwrap_or("/");
     let (command, full_args) = full_command.split_once('?').unwrap_or((full_command, ""));
@@ -155,13 +158,14 @@ async fn abort_connection(socket: &mut TcpSocket<'_>) {
 // The total length of the response must be less than the buffer size.
 // Returns the total length of the response.
 fn generate_http_response(
-    html: &str,
+    html_content: &[u8],
     buffer: &mut [u8; TCP_BUFFER_SIZE],
 ) -> Result<usize, &'static str> {
-    let headers = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n<!DOCTYPE html><html><body>\r\n";
-    let tail = b"\r\n</body></html>\r\n";
-
-    let total_length = headers.len() + html.len() + tail.len();
+    let total_length = HTTP_HEADERS.len()
+        + HTML_HEADER.len()
+        + html_content.len()
+        + HTML_MENU.len()
+        + HTML_TAIL.len();
 
     if total_length > TCP_BUFFER_SIZE {
         return Err("Response does not fit in TCP buffer");
@@ -170,15 +174,23 @@ fn generate_http_response(
     let mut offset = 0;
 
     // Copy headers into buffer
-    buffer[offset..offset + headers.len()].copy_from_slice(headers);
-    offset += headers.len();
+    buffer[offset..offset + HTTP_HEADERS.len()].copy_from_slice(HTTP_HEADERS);
+    offset += HTTP_HEADERS.len();
 
-    // Copy html into buffer
-    buffer[offset..offset + html.len()].copy_from_slice(html.as_bytes());
-    offset += html.len();
+    // Copy html header into buffer
+    buffer[offset..offset + HTML_HEADER.len()].copy_from_slice(HTML_HEADER);
+    offset += HTML_HEADER.len();
 
-    // Copy tail into buffer
-    buffer[offset..offset + tail.len()].copy_from_slice(tail);
+    // Copy html content into buffer
+    buffer[offset..offset + html_content.len()].copy_from_slice(html_content);
+    offset += html_content.len();
+
+    // Copy html menu into buffer
+    buffer[offset..offset + HTML_MENU.len()].copy_from_slice(HTML_MENU);
+    offset += HTML_MENU.len();
+
+    // Copy html tail into buffer
+    buffer[offset..offset + HTML_TAIL.len()].copy_from_slice(HTML_TAIL);
 
     Ok(total_length)
 }

@@ -202,5 +202,5 @@ async fn get_dns_address(
         return Err(());
     }
 
-    return Ok(remote_endpoint);
+    Ok(remote_endpoint)
 }
