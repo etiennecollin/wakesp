@@ -1,9 +1,8 @@
-use crate::utils::{parse_ip_address, wait_for_connection, write_tcp_buf};
+use crate::utils::{abort_connection, parse_ip_address, wait_for_connection, write_tcp_buf};
 
 use embassy_net::{dns::DnsQueryType, tcp::TcpSocket, IpAddress, IpEndpoint, Stack};
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_println::println;
 use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::{String, Vec};
 
@@ -41,7 +40,6 @@ pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
             {
                 Ok(Some(v)) => {
                     log::info!("DNS | Got response from {}:", PUBLIC_IP_PROVIDER_HOST);
-                    println!("{}", v);
                     v
                 }
                 Ok(None) => {
@@ -56,6 +54,7 @@ pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
             Some(v) => v,
             None => {
                 log::error!("DNS | Public IP address not found in response");
+                log::error!("{}", public_ip_response);
                 continue;
             }
         };
@@ -68,6 +67,7 @@ pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
             }
             Err(e) => {
                 log::error!("DNS | Public IP address not found in response -> {}", e);
+                log::error!("{}", public_ip_response);
                 continue;
             }
         };
@@ -87,15 +87,18 @@ pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
         match send_http_request(stack, DNS_HOST, DNS_HTTP_REQUEST).await {
             Ok(Some(v)) => {
                 log::info!("DNS | Got response from {}:", DNS_HOST);
-                println!("{}", v);
+                let (_, tail) = v.split_once("\r\n\r\n").unwrap_or((v.as_str(), ""));
+                if tail.is_empty() {
+                    log::warn!("DNS | Response was empty");
+                } else {
+                    log::info!("...\r\n{}", tail);
+                }
                 log::info!("DNS | DNS updated. Next check in {} seconds", delay_seconds);
                 prev_public_ip = Some(public_ip);
                 Timer::after(Duration::from_secs(delay_seconds)).await;
             }
-            Ok(None) => {
-                continue;
-            }
-            Err(_) => continue,
+            Ok(None) => log::warn!("DNS | Response was empty"),
+            Err(_) => log::error!("DNS | Error updating DNS"),
         };
     }
 }
@@ -132,13 +135,13 @@ async fn send_http_request(
     // Setup TCP socket
     let mut rx_buffer = [0; TCP_BUFFER_SIZE];
     let mut tx_buffer = [0; TCP_BUFFER_SIZE];
-    let mut socket_tcp = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-    socket_tcp.set_timeout(Some(embassy_time::Duration::from_secs(10)));
+    let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+    socket.set_timeout(Some(embassy_time::Duration::from_secs(10)));
 
     // Connect to the remote endpoint
     log::info!("DNS | Connecting to {}...", target_host);
-    if let Err(e) = socket_tcp.connect(remote_endpoint).await {
-        socket_tcp.close();
+    if let Err(e) = socket.connect(remote_endpoint).await {
+        abort_connection(&mut socket).await;
         log::error!("DNS | Error connecting to {}: {:?}", target_host, e);
         return Err(());
     }
@@ -146,18 +149,18 @@ async fn send_http_request(
 
     // Send the HTTP request to update the IP address
     log::info!("DNS | Writing HTTP request to {}...", target_host);
-    if let Err(e) = write_tcp_buf(&mut socket_tcp, request).await {
-        socket_tcp.close();
-        log::error!("DNS | Error writing request to {}: {:?}", target_host, e);
+    if (write_tcp_buf(&mut socket, request).await).is_err() {
+        abort_connection(&mut socket).await;
+        log::error!("DNS | Error writing request to {}", target_host);
         return Err(());
     }
 
     // Get response length
     let mut response_buf = [0; TCP_BUFFER_SIZE];
-    let response_len = match socket_tcp.read(&mut response_buf).await {
+    let response_len = match socket.read(&mut response_buf).await {
         Ok(n) => n,
         Err(e) => {
-            socket_tcp.close();
+            abort_connection(&mut socket).await;
             log::error!("DNS | Error reading response from {}: {:?}", target_host, e);
             return Err(());
         }
@@ -173,7 +176,9 @@ async fn send_http_request(
         }
     };
 
-    socket_tcp.close();
+    socket.close();
+    Timer::after(Duration::from_millis(500)).await;
+    abort_connection(&mut socket).await;
     response
 }
 

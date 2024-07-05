@@ -1,12 +1,11 @@
 mod html_responses;
 mod wol_utils;
 
-use crate::utils::{wait_for_connection, write_tcp_buf};
+use crate::utils::{abort_connection, wait_for_connection, write_tcp_buf};
 
 use embassy_net::{tcp::TcpSocket, IpListenEndpoint, Stack};
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_println::println;
 use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::FnvIndexMap;
 use html_responses::{HTML_HEADER, HTML_MENU, HTML_TAIL};
@@ -61,7 +60,16 @@ pub async fn http_server_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
             abort_connection(&mut socket).await;
             continue;
         };
-        log::info!("HTTP | Accepted connection");
+
+        let remote_endpoint_addr = match socket.remote_endpoint() {
+            Some(v) => v.addr,
+            None => {
+                log::error!("HTTP | Could not get remote endpoint");
+                abort_connection(&mut socket).await;
+                continue;
+            }
+        };
+        log::info!("HTTP | Accepted connection to {}", remote_endpoint_addr);
 
         let mut read_buffer = [0u8; TCP_BUFFER_SIZE];
         match socket.read(&mut read_buffer).await {
@@ -69,10 +77,7 @@ pub async fn http_server_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
             Ok(len) => {
                 // Parse the query as UTF8 and print it
                 let query = match core::str::from_utf8(&read_buffer[..len]) {
-                    Ok(v) => {
-                        println!("{}", v);
-                        v
-                    }
+                    Ok(v) => v,
                     Err(e) => {
                         log::error!("HTTP | Query was not UTF8: {:?}", e);
                         abort_connection(&mut socket).await;
@@ -94,8 +99,8 @@ pub async fn http_server_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
                     }
                 };
 
-                if let Err(e) = write_tcp_buf(&mut socket, &response_buffer[..response_len]).await {
-                    log::error!("DNS | Error writing response: {:?}", e);
+                if (write_tcp_buf(&mut socket, &response_buffer[..response_len]).await).is_err() {
+                    log::error!("HTTP | Error writing response");
                     abort_connection(&mut socket).await;
                     continue;
                 }
@@ -103,8 +108,9 @@ pub async fn http_server_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
             Err(e) => log::error!("HTTP | Error reading response: {:?}", e),
         };
 
+        log::info!("HTTP | Closing connection to {}", remote_endpoint_addr);
         socket.close();
-        Timer::after(Duration::from_millis(1_000)).await;
+        Timer::after(Duration::from_millis(50)).await;
         abort_connection(&mut socket).await;
     }
 }
@@ -117,6 +123,8 @@ async fn handle_http_query(
     // Parse the command and arguments
     let full_command = query.split_whitespace().nth(1).unwrap_or("/");
     let (command, full_args) = full_command.split_once('?').unwrap_or((full_command, ""));
+
+    log::info!("HTTP | Command: {}", full_command);
 
     // Collect args in a hashmap
     let mut args = FnvIndexMap::<_, _, 4>::new();
@@ -143,14 +151,6 @@ async fn handle_http_query(
             }
         }
         _ => Ok(html_responses::HOME),
-    }
-}
-
-/// Abort the connection and flush the socket.
-async fn abort_connection(socket: &mut TcpSocket<'_>) {
-    socket.abort();
-    if let Err(e) = socket.flush().await {
-        log::error!("HTTP | Flush error: {:?}", e);
     }
 }
 

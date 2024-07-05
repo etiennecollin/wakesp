@@ -1,4 +1,5 @@
 use core::str::FromStr;
+use embassy_futures::select::{select, Either};
 use embassy_net::{tcp::TcpSocket, IpAddress, Stack};
 use embassy_time::{Duration, Timer};
 use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
@@ -90,22 +91,45 @@ pub async fn wait_for_connection(stack: &'static Stack<WifiDevice<'static, WifiS
 }
 
 /// Writes a buffer to a TCP socket.
-pub async fn write_tcp_buf(
-    socket: &mut TcpSocket<'_>,
-    mut buf: &[u8],
-) -> Result<(), embassy_net::tcp::Error> {
+pub async fn write_tcp_buf(socket: &mut TcpSocket<'_>, mut buf: &[u8]) -> Result<(), ()> {
     while !buf.is_empty() {
         match socket.write(buf).await {
-            Ok(0) => log::warn!("TCP buffer writer wrote 0 bytes to the buffer"),
+            Ok(0) => log::warn!("SYS | TCP buffer writer wrote 0 bytes to the buffer"),
             Ok(n) => buf = &buf[n..],
-            Err(e) => return Err(e),
+            Err(_) => return Err(()),
         }
     }
 
-    if let Err(e) = socket.flush().await {
-        log::error!("flush error: {:?}", e);
-        return Err(e);
-    }
+    flush_wrapper(socket, 500).await?;
 
+    Ok(())
+}
+
+/// Abort the connection and flush the socket.
+pub async fn abort_connection(socket: &mut TcpSocket<'_>) {
+    socket.abort();
+    let _ = flush_wrapper(socket, 500).await;
+}
+
+/// Flush the socket and return an error if it takes too long
+/// `max_time` is in milliseconds
+async fn flush_wrapper(socket: &mut TcpSocket<'_>, max_time: u64) -> Result<(), ()> {
+    match select(
+        socket.flush(),
+        Timer::after(Duration::from_millis(max_time)),
+    )
+    .await
+    {
+        Either::First(v) => {
+            if v.is_err() {
+                log::error!("SYS | Error flushing TCP socket: {:?}", v);
+                return Err(());
+            }
+        }
+        Either::Second(_) => {
+            log::error!("SYS | TCP socket took too long to flush");
+            return Err(());
+        }
+    }
     Ok(())
 }

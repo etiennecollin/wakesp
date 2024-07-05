@@ -26,14 +26,14 @@ pub async fn wol_command(
     let mac_addr = match convert_mac_address(mac_addr) {
         Ok(v) => v,
         Err(_) => {
-            log::error!("HTTP | Error parsing MAC address");
+            log::error!("WOL | Error parsing MAC address");
             return Err(());
         }
     };
     let wol_packet = match generate_wol_packet(mac_addr.as_str()) {
         Ok(v) => v,
         Err(e) => {
-            log::warn!("UDP | Error creating WOL packet -> {}: \"{}\"", e, mac_addr);
+            log::warn!("WOL | Error creating WOL packet -> {}: \"{}\"", e, mac_addr);
             return Err(());
         }
     };
