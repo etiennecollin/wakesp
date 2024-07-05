@@ -1,4 +1,4 @@
-use crate::utils::{parse_ip_address, wait_for_connection};
+use crate::utils::{parse_ip_address, wait_for_connection, write_tcp_buf};
 
 use embassy_net::{dns::DnsQueryType, tcp::TcpSocket, IpAddress, IpEndpoint, Stack};
 use embassy_time::{Duration, Timer};
@@ -7,38 +7,29 @@ use esp_println::println;
 use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::{String, Vec};
 
+/// The interval in seconds between the DNS update checks.
 const DNS_CHECK_DELAY: &str = env!("DNS_CHECK_DELAY");
-const DNS_CHECK_FALLBACK_DELAY: u64 = 60;
+/// The fallback interval in seconds between the DNS update checks.
+const DNS_CHECK_DELAY_FALLBACK: u64 = 60;
+/// The hostname of the update service of your DNS provider.
 const DNS_HOST: &str = env!("DNS_HOST");
+/// The HTTP request format for updating the DNS.
 const DNS_HTTP_REQUEST: &[u8] = env!("DNS_HTTP_REQUEST").as_bytes();
 
+/// The hostname of the API provider for getting the public IP address.
 const PUBLIC_IP_PROVIDER_HOST: &str = "api.ipify.org";
+/// The HTTP request format for getting the public IP address.
 const PUBLIC_IP_PROVIDER_REQUEST: &[u8] =
-    "GET / HTTP/1.1\r\nHost: api.ipify.org\r\nConnection: close\r\n\r\n".as_bytes();
+    b"GET / HTTP/1.1\r\nHost: api.ipify.org\r\nConnection: close\r\n\r\n";
 
-const TCP_BUFFER_SIZE: usize = 4096;
+/// The buffer size for the TCP socket.
+/// It should be big enough to contain the HTTP requests and responses.
+const TCP_BUFFER_SIZE: usize = 1024;
 
+/// The embassy task that handles the DNS updater.
 #[embassy_executor::task]
 pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
-    // Parse the DNS check delay and fallback to the fallback delay if there is an error
-    let delay_seconds = match DNS_CHECK_DELAY.parse::<u64>() {
-        Ok(v) => v,
-        Err(e) => {
-            log::error!(
-                "DNS | Error parsing DNS_CHECK_DELAY to u64 -> {}: {}",
-                e,
-                DNS_CHECK_DELAY
-            );
-
-            log::error!(
-                "DNS | Using fallback DNS check delay: {} seconds",
-                DNS_CHECK_FALLBACK_DELAY
-            );
-            DNS_CHECK_FALLBACK_DELAY
-        }
-    };
-
-    // Keep track of the previous public IP address
+    let delay_seconds = get_dns_check_delay(DNS_CHECK_DELAY);
     let mut prev_public_ip = None;
     loop {
         wait_for_connection(stack).await;
@@ -109,6 +100,26 @@ pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
     }
 }
 
+/// Parse the DNS check delay and fallback to the fallback delay if there is an error
+fn get_dns_check_delay(delay: &str) -> u64 {
+    match delay.parse::<u64>() {
+        Ok(v) => v,
+        Err(e) => {
+            log::error!(
+                "DNS | Error parsing DNS_CHECK_DELAY to u64 -> {}: {}",
+                e,
+                delay
+            );
+
+            log::error!(
+                "DNS | Using fallback DNS check delay: {} seconds",
+                DNS_CHECK_DELAY_FALLBACK
+            );
+            DNS_CHECK_DELAY_FALLBACK
+        }
+    }
+}
+
 /// Sends an HTTP request to the target host and returns its response.
 async fn send_http_request(
     stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>,
@@ -163,7 +174,7 @@ async fn send_http_request(
     };
 
     socket_tcp.close();
-    return response;
+    response
 }
 
 /// Queries the DNS server for the IP address of the target host.
@@ -192,20 +203,4 @@ async fn get_dns_address(
     }
 
     return Ok(remote_endpoint);
-}
-
-/// Writes a buffer to a TCP socket.
-async fn write_tcp_buf(
-    socket: &mut TcpSocket<'_>,
-    buf: &[u8],
-) -> Result<(), embassy_net::tcp::Error> {
-    let mut buf = buf;
-    while !buf.is_empty() {
-        match socket.write(buf).await {
-            Ok(0) => log::warn!("TCP buffer writer wrote 0 bytes to the buffer"),
-            Ok(n) => buf = &buf[n..],
-            Err(e) => return Err(e),
-        }
-    }
-    Ok(())
 }

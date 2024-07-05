@@ -3,7 +3,7 @@
 #![feature(type_alias_impl_trait)]
 
 mod dns;
-mod udp;
+mod http_server;
 mod utils;
 
 use core::str::FromStr;
@@ -30,15 +30,21 @@ use esp_wifi::{
     },
     EspWifiInitFor,
 };
-use udp::udp_task;
+use http_server::http_server_task;
 
+/// The hostname of the device.
 const HOSTNAME: &str = env!("HOSTNAME");
+/// The fallback hostname of the device.
 const HOSTNAME_FALLBACK: &str = "wakesp";
+/// The password of the wifi network.
 const PASSWORD: &str = env!("PASSWORD");
+/// The SSID of the wifi network.
 const SSID: &str = env!("SSID");
 
+/// The DNS enable flag.
 const DNS_ENABLE: &str = env!("DNS_ENABLE");
-const UDP_ENABLE: &str = env!("UDP_ENABLE");
+/// The HTTP server enable flag.
+const HTTP_SERVER_ENABLE: &str = env!("HTTP_SERVER_ENABLE");
 
 #[main]
 async fn main(spawner: Spawner) {
@@ -110,8 +116,8 @@ async fn main(spawner: Spawner) {
     if DNS_ENABLE == "true" || DNS_ENABLE == "1" {
         spawner.spawn(dns_updater_task(stack)).ok();
     }
-    if UDP_ENABLE == "true" || UDP_ENABLE == "1" {
-        spawner.spawn(udp_task(stack)).ok();
+    if HTTP_SERVER_ENABLE == "true" || HTTP_SERVER_ENABLE == "1" {
+        spawner.spawn(http_server_task(stack)).ok();
     }
 }
 
