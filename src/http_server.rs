@@ -12,7 +12,8 @@ use html_responses::{HTML_HEADER, HTML_MENU, HTML_TAIL};
 use wol_utils::wol_command;
 
 /// The HTTP headers for the response.
-const HTTP_HEADERS: &[u8] = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n";
+const HTTP_HEADERS: &[u8] =
+    b"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n";
 /// The port on which the device will listen for HTTP requests.
 const HTTP_LISTEN_PORT: &str = env!("HTTP_LISTEN_PORT");
 /// The fallback port on which the device will listen for HTTP requests.
