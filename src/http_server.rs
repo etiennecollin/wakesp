@@ -1,4 +1,5 @@
 mod html_responses;
+mod switch_utils;
 mod wol_utils;
 
 use crate::utils::{abort_connection, wait_for_connection, write_tcp_buf};
@@ -9,7 +10,8 @@ use esp_backtrace as _;
 use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::FnvIndexMap;
 use html_responses::{HTML_HEADER, HTML_MENU, HTML_TAIL};
-use wol_utils::{switch_command, wol_command};
+use switch_utils::switch_command;
+use wol_utils::wol_command;
 
 /// The HTTP headers for the response.
 const HTTP_HEADERS: &[u8] =

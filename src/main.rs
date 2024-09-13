@@ -67,14 +67,14 @@ async fn main(spawner: Spawner) {
     let mut rng = Rng::new(peripherals.RNG);
 
     // Initialize GPIO pins
-    let gpio2 = OutputOpenDrain::new(io.pins.gpio2, Level::Low, Pull::Up);
-    let gpio3 = OutputOpenDrain::new(io.pins.gpio3, Level::Low, Pull::Up);
-    let gpio4 = OutputOpenDrain::new(io.pins.gpio4, Level::Low, Pull::Up);
-    let gpio5 = OutputOpenDrain::new(io.pins.gpio5, Level::Low, Pull::Up);
-    let gpio6 = OutputOpenDrain::new(io.pins.gpio6, Level::Low, Pull::Up);
-    let gpio7 = OutputOpenDrain::new(io.pins.gpio7, Level::Low, Pull::Up);
-    let gpio8 = OutputOpenDrain::new(io.pins.gpio8, Level::Low, Pull::Up);
-    let gpio9 = OutputOpenDrain::new(io.pins.gpio9, Level::Low, Pull::Up);
+    let gpio2 = OutputOpenDrain::new(io.pins.gpio2, Level::High, Pull::Up);
+    let gpio3 = OutputOpenDrain::new(io.pins.gpio3, Level::High, Pull::Up);
+    let gpio4 = OutputOpenDrain::new(io.pins.gpio4, Level::High, Pull::Up);
+    let gpio5 = OutputOpenDrain::new(io.pins.gpio5, Level::High, Pull::Up);
+    let gpio6 = OutputOpenDrain::new(io.pins.gpio6, Level::High, Pull::Up);
+    let gpio7 = OutputOpenDrain::new(io.pins.gpio7, Level::High, Pull::Up);
+    let gpio8 = OutputOpenDrain::new(io.pins.gpio8, Level::High, Pull::Up);
+    let gpio9 = OutputOpenDrain::new(io.pins.gpio9, Level::High, Pull::Up);
     GPIO2.lock(|x| x.borrow_mut().replace(gpio2));
     GPIO3.lock(|x| x.borrow_mut().replace(gpio3));
     GPIO4.lock(|x| x.borrow_mut().replace(gpio4));
