@@ -17,6 +17,48 @@ const WOL_BROADCAST_ADDR: &str = env!("WOL_BROADCAST_ADDR");
 /// The fallback broadcast address to send the WOL packet to.
 const WOL_BROADCAST_ADDR_FALLBACK: IpAddress = IpAddress::v4(255, 255, 255, 255);
 
+/// Triggers a GPIO pin set as an open drain
+pub async fn switch_command(pin: &str) -> Result<(), ()> {
+    // Parse the pin number as a u8
+    let pin = match pin.parse::<u8>() {
+        Ok(v) => v,
+        Err(_) => {
+            log::error!("Switch | Error parsing pin number");
+            return Err(());
+        }
+    };
+
+    // match pin {
+    //     2 => {
+    //         let mut pin = OutputOpenDrain::new(io.pins.gpio2, Level::Low, Pull::None);
+    //
+    //         pin.toggle();
+    //         Timer::after(Duration::from_millis(500)).await;
+    //         pin.toggle();
+    //     }
+    //     3 => {
+    //         let mut pin = Output::new(io.pins.gpio3, Level::Low);
+    //
+    //         pin.toggle();
+    //         Timer::after(Duration::from_millis(500)).await;
+    //         pin.toggle();
+    //     }
+    //     4 => {
+    //         let mut pin = Output::new(io.pins.gpio4, Level::Low);
+    //
+    //         pin.toggle();
+    //         Timer::after(Duration::from_millis(500)).await;
+    //         pin.toggle();
+    //     }
+    //     _ => {
+    //         log::error!("Switch | Invalid pin number");
+    //         return Err(());
+    //     }
+    // }
+
+    Ok(())
+}
+
 /// Send a Wake-on-LAN command to the specified MAC address.
 pub async fn wol_command(
     stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>,
