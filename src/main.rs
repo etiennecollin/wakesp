@@ -4,6 +4,7 @@
 
 mod dns;
 mod http_server;
+mod pins;
 mod utils;
 
 use core::str::FromStr;
@@ -14,6 +15,7 @@ use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
+    gpio::{Io, Level, OutputOpenDrain, Pull},
     peripherals::Peripherals,
     prelude::*,
     riscv::singleton,
@@ -34,6 +36,7 @@ use esp_wifi::{
     EspWifiInitFor,
 };
 use http_server::http_server_task;
+use pins::*;
 
 /// The hostname of the device.
 const HOSTNAME: &str = env!("HOSTNAME");
@@ -58,9 +61,28 @@ async fn main(spawner: Spawner) {
 
     // Initialize the peripherals
     let peripherals = Peripherals::take();
+    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
     let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
     let mut rng = Rng::new(peripherals.RNG);
+
+    // Initialize GPIO pins
+    let gpio2 = OutputOpenDrain::new(io.pins.gpio2, Level::Low, Pull::Up);
+    let gpio3 = OutputOpenDrain::new(io.pins.gpio3, Level::Low, Pull::Up);
+    let gpio4 = OutputOpenDrain::new(io.pins.gpio4, Level::Low, Pull::Up);
+    let gpio5 = OutputOpenDrain::new(io.pins.gpio5, Level::Low, Pull::Up);
+    let gpio6 = OutputOpenDrain::new(io.pins.gpio6, Level::Low, Pull::Up);
+    let gpio7 = OutputOpenDrain::new(io.pins.gpio7, Level::Low, Pull::Up);
+    let gpio8 = OutputOpenDrain::new(io.pins.gpio8, Level::Low, Pull::Up);
+    let gpio9 = OutputOpenDrain::new(io.pins.gpio9, Level::Low, Pull::Up);
+    GPIO2.lock(|x| x.borrow_mut().replace(gpio2));
+    GPIO3.lock(|x| x.borrow_mut().replace(gpio3));
+    GPIO4.lock(|x| x.borrow_mut().replace(gpio4));
+    GPIO5.lock(|x| x.borrow_mut().replace(gpio5));
+    GPIO6.lock(|x| x.borrow_mut().replace(gpio6));
+    GPIO7.lock(|x| x.borrow_mut().replace(gpio7));
+    GPIO8.lock(|x| x.borrow_mut().replace(gpio8));
+    GPIO9.lock(|x| x.borrow_mut().replace(gpio9));
 
     // Generate a seed for the wifi stack
     let mut seed_buf = [0u8; 8];

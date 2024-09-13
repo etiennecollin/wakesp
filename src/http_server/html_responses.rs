@@ -17,6 +17,21 @@ pub const SWITCH_SELECT: &[u8] = b"\
     <br />
     <label for=\"gpio4\">GPIO 4</label>
     <input type=\"radio\" id=\"gpio4\" name=\"gpio\" value=\"4\" />
+    <br />
+    <label for=\"gpio5\">GPIO 5</label>
+    <input type=\"radio\" id=\"gpio5\" name=\"gpio\" value=\"5\" />
+    <br />
+    <label for=\"gpio6\">GPIO 6</label>
+    <input type=\"radio\" id=\"gpio6\" name=\"gpio\" value=\"6\" />
+    <br />
+    <label for=\"gpio7\">GPIO 7</label>
+    <input type=\"radio\" id=\"gpio7\" name=\"gpio\" value=\"7\" />
+    <br />
+    <label for=\"gpio8\">GPIO 8</label>
+    <input type=\"radio\" id=\"gpio8\" name=\"gpio\" value=\"8\" />
+    <br />
+    <label for=\"gpio9\">GPIO 9</label>
+    <input type=\"radio\" id=\"gpio9\" name=\"gpio\" value=\"9\" />
   </div>
   <input type=\"submit\" value=\"Submit\" />
 </form>";
@@ -91,7 +106,7 @@ pub const HTML_HEADER: &[u8] = b"\
     justify-content: center;
     align-items: center;
     text-align: center;
-    height: 100%;
+    height: 120%;
     background-color: #221;
   }
 

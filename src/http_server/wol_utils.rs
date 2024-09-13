@@ -1,5 +1,5 @@
+use crate::pins::*;
 use crate::utils::{convert_mac_address, parse_ip_address};
-
 use embassy_net::{
     udp::{PacketMetadata, UdpSocket},
     IpAddress, IpEndpoint, Stack,
@@ -28,33 +28,170 @@ pub async fn switch_command(pin_str: &str) -> Result<(), ()> {
         }
     };
 
-    // match pin {
-    //     2 => {
-    //         let mut pin = OutputOpenDrain::new(io.pins.gpio2, Level::Low, Pull::None);
-    //
-    //         pin.toggle();
-    //         Timer::after(Duration::from_millis(500)).await;
-    //         pin.toggle();
-    //     }
-    //     3 => {
-    //         let mut pin = Output::new(io.pins.gpio3, Level::Low);
-    //
-    //         pin.toggle();
-    //         Timer::after(Duration::from_millis(500)).await;
-    //         pin.toggle();
-    //     }
-    //     4 => {
-    //         let mut pin = Output::new(io.pins.gpio4, Level::Low);
-    //
-    //         pin.toggle();
-    //         Timer::after(Duration::from_millis(500)).await;
-    //         pin.toggle();
-    //     }
-    //     _ => {
-    //         log::error!("Switch | Invalid pin number");
-    //         return Err(());
-    //     }
-    // }
+    let mut triggered = false;
+    match pin {
+        2 => {
+            GPIO2.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+            Timer::after(Duration::from_millis(500)).await;
+            GPIO2.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+        }
+        3 => {
+            GPIO3.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+            Timer::after(Duration::from_millis(500)).await;
+            GPIO3.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+        }
+        4 => {
+            GPIO4.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+            Timer::after(Duration::from_millis(500)).await;
+            GPIO4.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+        }
+        5 => {
+            GPIO5.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+            Timer::after(Duration::from_millis(500)).await;
+            GPIO5.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+        }
+        6 => {
+            GPIO6.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+            Timer::after(Duration::from_millis(500)).await;
+            GPIO6.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+        }
+        7 => {
+            GPIO7.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+            Timer::after(Duration::from_millis(500)).await;
+            GPIO7.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+        }
+        8 => {
+            GPIO8.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+            Timer::after(Duration::from_millis(500)).await;
+            GPIO8.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+        }
+        9 => {
+            GPIO9.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+            Timer::after(Duration::from_millis(500)).await;
+            GPIO9.lock(|x| {
+                if let Some(v) = x.borrow_mut().as_mut() {
+                    v.toggle();
+                    triggered = true;
+                } else {
+                    triggered = false;
+                }
+            });
+        }
+        _ => {
+            log::error!("Switch | Invalid pin number");
+            return Err(());
+        }
+    }
+
+    if !triggered {
+        log::error!("Switch | Error toggling pin GPIO{}", pin_str);
+        return Err(());
+    }
 
     log::info!("SWITCH | Triggered pin GPIO{}", pin_str);
     Ok(())
