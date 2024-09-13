@@ -18,9 +18,9 @@ const WOL_BROADCAST_ADDR: &str = env!("WOL_BROADCAST_ADDR");
 const WOL_BROADCAST_ADDR_FALLBACK: IpAddress = IpAddress::v4(255, 255, 255, 255);
 
 /// Triggers a GPIO pin set as an open drain
-pub async fn switch_command(pin: &str) -> Result<(), ()> {
+pub async fn switch_command(pin_str: &str) -> Result<(), ()> {
     // Parse the pin number as a u8
-    let pin = match pin.parse::<u8>() {
+    let pin = match pin_str.parse::<u8>() {
         Ok(v) => v,
         Err(_) => {
             log::error!("Switch | Error parsing pin number");
@@ -56,6 +56,7 @@ pub async fn switch_command(pin: &str) -> Result<(), ()> {
     //     }
     // }
 
+    log::info!("SWITCH | Triggered pin GPIO{}", pin_str);
     Ok(())
 }
 
