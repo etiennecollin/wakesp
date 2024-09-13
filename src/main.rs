@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(type_alias_impl_trait)]
+#![feature(impl_trait_in_assoc_type)]
 
 mod dns;
 mod http_server;
@@ -19,7 +19,10 @@ use esp_hal::{
     riscv::singleton,
     rng::Rng,
     system::SystemControl,
-    timer::{systimer::SystemTimer, timg::TimerGroup},
+    timer::{
+        systimer::{SystemTimer, Target},
+        timg::TimerGroup,
+    },
 };
 use esp_hal_embassy as embassy;
 use esp_wifi::{
@@ -65,7 +68,9 @@ async fn main(spawner: Spawner) {
     let seed: u64 = u64::from_ne_bytes(seed_buf);
 
     // Initialize the wifi
-    let timer = SystemTimer::new(peripherals.SYSTIMER).alarm0;
+    let timer = SystemTimer::new(peripherals.SYSTIMER)
+        .split::<Target>()
+        .alarm0;
     let init = initialize(
         EspWifiInitFor::Wifi,
         timer,
@@ -108,8 +113,8 @@ async fn main(spawner: Spawner) {
     .unwrap();
 
     // Initialize embassy for async tasks
-    let timg0 = TimerGroup::new_async(peripherals.TIMG0, &clocks);
-    embassy::init(&clocks, timg0);
+    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+    embassy::init(&clocks, timg0.timer0);
 
     spawner.spawn(connection(controller)).ok();
     spawner.spawn(net_task(stack)).ok();

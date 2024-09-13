@@ -1,5 +1,5 @@
 [toolchain]
-channel = "nightly-2024-06-12"
+channel = "nightly" # For embassy_executor
 components = ["rust-src"]
 targets = ["riscv32imc-unknown-none-elf"]
 
