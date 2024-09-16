@@ -68,7 +68,8 @@ Set the following environment variables. These variables are used to configure t
 
 **Switch Configuration**
 
-- `SWITCH_ENABLE`: A flag to enable or disable the Switch feature of the HTTP server. This uses the ESP32 as a computer power switch. Set to "true" or "1" to enable. **If you use this as a power switch, make sure to properly configure the GPIO pins as Pull Up or Pull Down in the `./src/main.rs` file.**
+- `SWITCH_ENABLE`: A flag to enable or disable the Switch feature of the HTTP server. This uses the ESP32 as a power switch. Set to "true" or "1" to enable.
+  - **If you use the Wakesp as a power switch, make sure to properly configure the GPIO pins as Pull Up or Pull Down in the `./src/main.rs` file depending on which device you want to switch ON and OFF. Make sure the pin on which you connect the Wakesp GPIO pin has a voltage of 3.3V.**
 
 Here is an example of setting these variables:
 
