@@ -66,14 +66,15 @@ Set the following environment variables. These variables are used to configure t
 - `WOL_ENABLE`: A flag to enable or disable the WOL feature of the HTTP server. Set to "true" or "1" to enable.
 - `WOL_BROADCAST_ADDR`: The broadcast address to send Wake-on-LAN packets to. Typically set to "255.255.255.255" to broadcast to all devices on the local network.
 
-**Switch Configuration**
+:warning: **Switch Configuration** :warning:
 
 - `SWITCH_ENABLE`: A flag to enable or disable the Switch feature of the HTTP server. This uses the ESP32 as a power switch. Set to "true" or "1" to enable.
-  - **Make sure to properly configure the GPIO pins as Pull Up or Pull Down in the `./src/main.rs` file depending on which device you want to switch ON and OFF.**
-    - Computer power switches often need a Pull Up configuration.
-  - **Make sure the pins on which you connect the Wakesp GPIO pins have a voltage of 3.3V. Use a level shifter if needed.**
-  - **Make sure the Wakesp and the devices it is connected to share the same ground.**
-  - **If you do not follow these last 3 points, the Wakesp and/or the devices it is connected to could be permanently damaged.**
+  - :warning: Check the datasheet of your ESP32 to **assign the right pins as GPIO** in the `./src/main.rs` file.
+  - :warning: Make sure to properly **configure the GPIO pins as Pull Up or Pull Down** in the `./src/main.rs` file depending on which device you want to switch ON and OFF.
+    - Computer power switches **often** need a Pull Up configuration.
+  - :warning: Make sure the pins on which you connect the Wakesp GPIO pins have a **maximum voltage of 3.3V**. Use a level shifter if needed.
+  - :warning: Make sure the Wakesp and the devices it is connected to **share the same ground**.
+  - :warning: **If you do not follow these last 3 points, the Wakesp and/or the devices it is connected to could be permanently damaged.**
 
 Here is an example of setting these variables:
 
