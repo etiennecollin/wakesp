@@ -1,5 +1,41 @@
 pub const HOME: &[u8] = b"";
 
+pub const SWITCH_SUCCESS: &[u8] = b"\
+<h1>Switch</h1>
+<p>Switch activated!</p>";
+
+pub const SWITCH_SELECT: &[u8] = b"\
+<h1>Switch</h1>
+<p>Select the pin to use as a power switch</p>
+<form method=\"get\">
+  <div>
+    <label for=\"gpio2\">GPIO 2</label>
+    <input type=\"radio\" id=\"gpio2\" name=\"gpio\" value=\"2\" />
+    <br />
+    <label for=\"gpio3\">GPIO 3</label>
+    <input type=\"radio\" id=\"gpio3\" name=\"gpio\" value=\"3\" />
+    <br />
+    <label for=\"gpio4\">GPIO 4</label>
+    <input type=\"radio\" id=\"gpio4\" name=\"gpio\" value=\"4\" />
+    <br />
+    <label for=\"gpio5\">GPIO 5</label>
+    <input type=\"radio\" id=\"gpio5\" name=\"gpio\" value=\"5\" />
+    <br />
+    <label for=\"gpio6\">GPIO 6</label>
+    <input type=\"radio\" id=\"gpio6\" name=\"gpio\" value=\"6\" />
+    <br />
+    <label for=\"gpio7\">GPIO 7</label>
+    <input type=\"radio\" id=\"gpio7\" name=\"gpio\" value=\"7\" />
+    <br />
+    <label for=\"gpio8\">GPIO 8</label>
+    <input type=\"radio\" id=\"gpio8\" name=\"gpio\" value=\"8\" />
+    <br />
+    <label for=\"gpio9\">GPIO 9</label>
+    <input type=\"radio\" id=\"gpio9\" name=\"gpio\" value=\"9\" />
+  </div>
+  <input type=\"submit\" value=\"Submit\" />
+</form>";
+
 pub const WOL_INPUT: &[u8] = b"\
 <h1>WOL</h1>
 <p>Insert the MAC address of the device to wake</p>
@@ -30,6 +66,11 @@ pub const HTML_MENU: &[u8] = b"\
   <li>
     <a class=\"arrow\" href=\"/wol\"
       ><i class=\"fas fa-arrow-alt-right\"></i>WOL</a
+    >
+  </li>
+  <li>
+    <a class=\"arrow\" href=\"/switch\"
+      ><i class=\"fas fa-arrow-alt-right\"></i>Switch</a
     >
   </li>
 </ol>\r\n";
@@ -65,7 +106,7 @@ pub const HTML_HEADER: &[u8] = b"\
     justify-content: center;
     align-items: center;
     text-align: center;
-    height: 100%;
+    height: 120%;
     background-color: #221;
   }
 
@@ -101,6 +142,11 @@ pub const HTML_HEADER: &[u8] = b"\
     color: #fff090;
   }
 
+  input[type=\"radio\"] {
+    width: 1.5em;
+    height: 1.5em;
+  }
+
   form {
     display: flex;
     flex-direction: column;
@@ -125,7 +171,9 @@ pub const HTML_HEADER: &[u8] = b"\
   }
 
   .arrow:hover,
-  input[type=\"submit\"]:hover {
+  label:hover,
+  input[type=\"submit\"]:hover,
+  input[type=\"radio\"]:hover {
     cursor: pointer;
     background-color: transparent;
   }
@@ -137,6 +185,7 @@ pub const HTML_HEADER: &[u8] = b"\
     left: -6em;
   }
 </style>
-</head>\r\n";
+</head>
+<body>\r\n";
 
 pub const HTML_TAIL: &[u8] = b"\r\n</body>\r\n</html>\r\n";

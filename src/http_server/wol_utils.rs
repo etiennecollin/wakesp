@@ -1,5 +1,4 @@
 use crate::utils::{convert_mac_address, parse_ip_address};
-
 use embassy_net::{
     udp::{PacketMetadata, UdpSocket},
     IpAddress, IpEndpoint, Stack,

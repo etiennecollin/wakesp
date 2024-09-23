@@ -66,6 +66,15 @@ Set the following environment variables. These variables are used to configure t
 - `WOL_ENABLE`: A flag to enable or disable the WOL feature of the HTTP server. Set to "true" or "1" to enable.
 - `WOL_BROADCAST_ADDR`: The broadcast address to send Wake-on-LAN packets to. Typically set to "255.255.255.255" to broadcast to all devices on the local network.
 
+**Switch Configuration**
+
+- `SWITCH_ENABLE`: A flag to enable or disable the Switch feature of the HTTP server. This uses the ESP32 as a power switch. Set to "true" or "1" to enable.
+  - **Make sure to properly configure the GPIO pins as Pull Up or Pull Down in the `./src/main.rs` file depending on which device you want to switch ON and OFF.**
+    - Computer power switches often need a Pull Up configuration.
+  - **Make sure the pins on which you connect the Wakesp GPIO pins have a voltage of 3.3V. Use a level shifter if needed.**
+  - **Make sure the Wakesp and the devices it is connected to share the same ground.**
+  - **If you do not follow these last 3 points, the Wakesp and/or the devices it is connected to could be permanently damaged.**
+
 Here is an example of setting these variables:
 
 ```bash
@@ -87,6 +96,9 @@ export HTTP_LISTEN_PORT="80"
 # For WOL
 export WOL_ENABLE="true"
 export WOL_BROADCAST_ADDR="255.255.255.255"
+
+# For Switch
+export SWITCH_ENABLE="true"
 ```
 
 Now, make sure that your current working directory (output of `pwd` command) is the root of the cloned repository.
@@ -129,6 +141,9 @@ HTTP_LISTEN_PORT="80"
 # For WOL
 WOL_ENABLE="true"
 WOL_BROADCAST_ADDR="255.255.255.255"
+
+# For Switch
+SWITCH_ENABLE="true"
 
 # ...
 ```

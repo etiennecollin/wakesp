@@ -1,4 +1,5 @@
 mod html_responses;
+mod switch_utils;
 mod wol_utils;
 
 use crate::utils::{abort_connection, wait_for_connection, write_tcp_buf};
@@ -9,6 +10,7 @@ use esp_backtrace as _;
 use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::FnvIndexMap;
 use html_responses::{HTML_HEADER, HTML_MENU, HTML_TAIL};
+use switch_utils::switch_command;
 use wol_utils::wol_command;
 
 /// The HTTP headers for the response.
@@ -23,6 +25,8 @@ const HTTP_LISTEN_PORT_FALLBACK: u16 = 8080;
 const TCP_BUFFER_SIZE: usize = 4096;
 /// The enable flag for the WOL feature.
 const WOL_ENABLE: &str = env!("WOL_ENABLE");
+/// The enable flag for the Switch feature.
+const SWITCH_ENABLE: &str = env!("SWITCH_ENABLE");
 
 /// The embassy task that handles the HTTP server.
 #[embassy_executor::task]
@@ -149,6 +153,18 @@ async fn handle_http_query(
                     Ok(html_responses::WOL_SUCCESS)
                 }
                 None => Ok(html_responses::WOL_INPUT),
+            }
+        }
+        "/switch" => {
+            if SWITCH_ENABLE != "true" && SWITCH_ENABLE != "1" {
+                return Ok(html_responses::NOT_ENABLED);
+            }
+            match args.get("gpio") {
+                Some(v) => {
+                    switch_command(v).await?;
+                    Ok(html_responses::SWITCH_SUCCESS)
+                }
+                None => Ok(html_responses::SWITCH_SELECT),
             }
         }
         _ => Ok(html_responses::HOME),
