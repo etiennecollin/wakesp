@@ -2,23 +2,25 @@
 runner = "espflash flash --monitor"
 
 [env]
-ESP_LOGLEVEL="INFO"
+DEFMT_LOG="info"
+ESP_LOG="INFO"
 
 [build]
+target = "riscv32imc-unknown-none-elf"
 rustflags = [
     # Required
     "-C", "link-arg=-Tlinkall.x",
-    # Required by wifi
-    "-C", "link-arg=-Trom_functions.x",
     # Required to obtain backtraces (e.g. when using the "esp-backtrace" crate.)
     "-C", "force-frame-pointers",
+
+    # Uncomment when enabling defmt
+    # "-C", "link-arg=-Tdefmt.x",
 
     # Uncomment for esp32c6 and esp32h2
     # "-C", "link-arg=-Trom_coexist.x",
     # "-C", "link-arg=-Trom_phy.x",
 ]
-target = "riscv32imc-unknown-none-elf"
 
 [unstable]
-build-std = ["core"]
+build-std = ["alloc", "core"]
 

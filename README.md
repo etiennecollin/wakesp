@@ -171,6 +171,7 @@ In the `Cargo.toml` file, modify appropriately:
 ```toml
 # ...
 [build]
+target = "riscv32imc-unknown-none-elf" # <- Set the right target
 rustflags = [
     # ...
 
@@ -178,7 +179,6 @@ rustflags = [
     # "-C", "link-arg=-Trom_coexist.x",
     # "-C", "link-arg=-Trom_phy.x",
 ]
-target = "riscv32imc-unknown-none-elf" # <- Set the right target
 # ...
 ```
 

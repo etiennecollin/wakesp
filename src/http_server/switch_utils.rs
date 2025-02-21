@@ -1,8 +1,8 @@
 use crate::pins::*;
 use core::cell::RefCell;
-use embassy_sync::blocking_mutex::{raw::CriticalSectionRawMutex, Mutex};
+use embassy_sync::blocking_mutex::{Mutex, raw::CriticalSectionRawMutex};
 use embassy_time::{Duration, Timer};
-use esp_hal::gpio::{InputPin, Level, OutputOpenDrain, OutputPin};
+use esp_hal::gpio::{Level, OutputOpenDrain};
 
 /// Triggers a GPIO pin based on the provided pin number.
 pub async fn switch_command(pin_str: &str) -> Result<(), ()> {
@@ -26,7 +26,7 @@ pub async fn switch_command(pin_str: &str) -> Result<(), ()> {
         8 => toggle_pin(&GPIO8, false).await,
         9 => toggle_pin(&GPIO9, false).await,
         _ => {
-            log::warn!("Switch | Invalid pin number");
+            log::warn!("Switch | Invalid pin number '{}'", pin);
             return Err(());
         }
     };
@@ -46,13 +46,10 @@ pub async fn switch_command(pin_str: &str) -> Result<(), ()> {
 /// The parameter `toggle_high` determines how the pin will be toggled:
 ///     - `true`: High -> 500ms -> Low
 ///     - `false`: Low -> 500ms -> High
-pub async fn toggle_pin<T>(
-    gpio: &Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, T>>>>,
+pub async fn toggle_pin(
+    gpio: &Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>>,
     toggle_high: bool,
-) -> Result<(), ()>
-where
-    T: InputPin + OutputPin,
-{
+) -> Result<(), ()> {
     let level_0;
     let level_1;
 
@@ -72,13 +69,10 @@ where
 }
 
 /// Sets a GPIO pin behind a Mutex and a RefCell to the provided level.
-pub fn set_pin<T>(
-    gpio: &Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, T>>>>,
+pub fn set_pin(
+    gpio: &Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>>,
     level: Level,
-) -> Result<(), ()>
-where
-    T: InputPin + OutputPin,
-{
+) -> Result<(), ()> {
     let mut triggered = false;
 
     gpio.lock(|pin_locked| {

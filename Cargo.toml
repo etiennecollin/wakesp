@@ -1,57 +1,59 @@
 [package]
 name = "wakesp"
-version = "0.2.0"
+version = "0.2.2"
 authors = ["etiennecollin <collin.etienne.contact@gmail.com>"]
 repository = "https://github.com/etiennecollin/wakesp"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 
 [features]
-default = [
-    "esp32c3",
-    "log",
-]
+default = ["esp32c3", "log", "logging-auto"]
 
-esp32c3 = ["esp-hal/esp32c3", "esp-println/esp32c3", "esp-backtrace/esp32c3", "esp-wifi/esp32c3", "esp-hal-embassy/esp32c3"]
+esp32c3 = [
+    "esp-backtrace/esp32c3",
+    "esp-hal-embassy/esp32c3",
+    "esp-hal/esp32c3",
+    "esp-println/esp32c3",
+    "esp-wifi/esp32c3",
+]
 
 log = [
     "dep:log",
-    "embassy-executor/log",
-    "embassy-futures/log",
-    "embassy-sync/log",
     "esp-backtrace/println",
     "esp-hal/log",
     "esp-println/log",
     "esp-wifi/log",
 ]
+
 defmt = [
     "dep:defmt",
-    "embassy-executor/defmt",
-    "embassy-futures/defmt",
     "embassy-net/defmt",
-    "embassy-sync/defmt",
+    "esp-alloc/defmt",
     "esp-backtrace/defmt",
     "esp-hal/defmt",
     "esp-println/defmt-espflash",
     "esp-wifi/defmt",
 ]
-jtag = ["esp-println/jtag-serial", "esp-wifi/phy-enable-usb"]
-uart = ["esp-println/uart"]
+
+logging-auto = ["esp-println/auto"]
+logging-jtag = ["esp-println/jtag-serial"]
+logging-uart = ["esp-println/uart"]
 
 [dependencies]
-defmt = { version = "0.3.8", optional = true }
-embassy-executor = { version = "0.6.0", features=["nightly"] }
+defmt = { version = "0.3.10", optional = true }
+embassy-executor = { version = "0.7.0", features=["nightly"] }
 embassy-futures = "0.1.1"
-embassy-net = { version = "0.4.0", features = ["tcp", "udp", "dns", "dhcpv4", "dhcpv4-hostname", "medium-ethernet"] }
-embassy-sync = "0.6.0"
-embassy-time = { version = "0.3.1", features=["generic-queue-8"] }
-esp-backtrace = { version = "0.14.1", features = ["panic-handler", "exception-handler"] }
-esp-hal = { version = "0.20.1" }
-esp-hal-embassy = { version = "0.3.0" }
-esp-println = { version = "0.11.0", features = ["critical-section", "colors"] }
-esp-wifi = { version = "0.9.1", features = ["wifi", "ipv4", "tcp", "udp", "icmp", "igmp", "dns", "dhcpv4", "embassy-net"] }
+embassy-net = { version = "0.6.0", features = ["tcp", "udp", "dns", "dhcpv4", "dhcpv4-hostname"] }
+embassy-sync = "0.6.2"
+embassy-time = { version = "0.4.0", features=["generic-queue-8"] }
+esp-alloc = "0.6.0"
+esp-backtrace = { version = "0.15.0", features = ["panic-handler", "exception-handler", "colors"] }
+esp-hal = { version = "0.23.1" }
+esp-hal-embassy = { version = "0.6.0" }
+esp-println = { version = "0.13.0", features = ["critical-section", "colors"] }
+esp-wifi = { version = "0.12.0", features = ["wifi"] }
 heapless = "0.8.0"
-log = { version = "0.4.22", optional = true }
+log = { version = "0.4.25", optional = true }
 
 [profile.dev]
 opt-level = "s"

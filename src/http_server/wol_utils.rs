@@ -1,10 +1,9 @@
 use crate::utils::{convert_mac_address, parse_ip_address};
 use embassy_net::{
-    udp::{PacketMetadata, UdpSocket},
     IpAddress, IpEndpoint, Stack,
+    udp::{PacketMetadata, UdpSocket},
 };
 use embassy_time::{Duration, Timer};
-use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 
 /// The port on which the device will listen for UDP requests.
 const UDP_BIND_PORT: u16 = 9;
@@ -17,10 +16,7 @@ const WOL_BROADCAST_ADDR: &str = env!("WOL_BROADCAST_ADDR");
 const WOL_BROADCAST_ADDR_FALLBACK: IpAddress = IpAddress::v4(255, 255, 255, 255);
 
 /// Send a Wake-on-LAN command to the specified MAC address.
-pub async fn wol_command(
-    stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>,
-    mac_addr: &str,
-) -> Result<(), ()> {
+pub async fn wol_command(stack: Stack<'_>, mac_addr: &str) -> Result<(), ()> {
     // Replace "%3A" with ":" in the MAC address
     let mac_addr = match convert_mac_address(mac_addr) {
         Ok(v) => v,

@@ -1,9 +1,8 @@
 use crate::utils::{abort_connection, parse_ip_address, wait_for_connection, write_tcp_buf};
 
-use embassy_net::{dns::DnsQueryType, tcp::TcpSocket, IpAddress, IpEndpoint, Stack};
+use embassy_net::{IpAddress, IpEndpoint, Stack, dns::DnsQueryType, tcp::TcpSocket};
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::{String, Vec};
 
 /// The interval in seconds between the DNS update checks.
@@ -27,7 +26,7 @@ const TCP_BUFFER_SIZE: usize = 1024;
 
 /// The embassy task that handles the DNS updater.
 #[embassy_executor::task]
-pub async fn dns_updater_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
+pub async fn dns_updater_task(stack: Stack<'static>) {
     let delay_seconds = get_dns_check_delay(DNS_CHECK_DELAY);
     let mut prev_public_ip = None;
     loop {
@@ -125,7 +124,7 @@ fn get_dns_check_delay(delay: &str) -> u64 {
 
 /// Sends an HTTP request to the target host and returns its response.
 async fn send_http_request(
-    stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>,
+    stack: Stack<'_>,
     target_host: &'static str,
     request: &'static [u8],
 ) -> Result<Option<String<TCP_BUFFER_SIZE>>, ()> {
@@ -183,10 +182,7 @@ async fn send_http_request(
 }
 
 /// Queries the DNS server for the IP address of the target host.
-async fn get_dns_address(
-    stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>,
-    target_host: &'static str,
-) -> Result<IpEndpoint, ()> {
+async fn get_dns_address(stack: Stack<'_>, target_host: &'static str) -> Result<IpEndpoint, ()> {
     // Resolve the IP of the remote endpoint
     log::info!("DNS | Resolving IP for {}...", target_host);
     let ip_list = match stack.dns_query(target_host, DnsQueryType::A).await {

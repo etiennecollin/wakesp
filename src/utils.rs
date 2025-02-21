@@ -1,8 +1,7 @@
 use core::str::FromStr;
-use embassy_futures::select::{select, Either};
-use embassy_net::{tcp::TcpSocket, IpAddress, Stack};
+use embassy_futures::select::{Either, select};
+use embassy_net::{IpAddress, Stack, tcp::TcpSocket};
 use embassy_time::{Duration, Timer};
-use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::String;
 
 /// 12 bytes for the chars and 5 bytes for the colons
@@ -76,7 +75,7 @@ pub fn parse_ip_address(ip_str: &str) -> Result<IpAddress, &str> {
 }
 
 /// Wait for the wifi device to connect to the network and until it gets an IP address
-pub async fn wait_for_connection(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
+pub async fn wait_for_connection(stack: Stack<'_>) {
     while !stack.is_link_up() {
         Timer::after(Duration::from_millis(500)).await;
     }

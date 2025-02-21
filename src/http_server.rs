@@ -4,10 +4,9 @@ mod wol_utils;
 
 use crate::utils::{abort_connection, wait_for_connection, write_tcp_buf};
 
-use embassy_net::{tcp::TcpSocket, IpListenEndpoint, Stack};
+use embassy_net::{IpListenEndpoint, Stack, tcp::TcpSocket};
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
-use esp_wifi::wifi::{WifiDevice, WifiStaDevice};
 use heapless::FnvIndexMap;
 use html_responses::{HTML_HEADER, HTML_MENU, HTML_TAIL};
 use switch_utils::switch_command;
@@ -30,7 +29,7 @@ const SWITCH_ENABLE: &str = env!("SWITCH_ENABLE");
 
 /// The embassy task that handles the HTTP server.
 #[embassy_executor::task]
-pub async fn http_server_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
+pub async fn http_server_task(stack: Stack<'static>) {
     let listening_port = match HTTP_LISTEN_PORT.parse::<u16>() {
         Ok(v) => v,
         Err(e) => {
@@ -121,10 +120,7 @@ pub async fn http_server_task(stack: &'static Stack<WifiDevice<'static, WifiStaD
 }
 
 /// Handle the HTTP query and return the appropriate response.
-async fn handle_http_query(
-    stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>,
-    query: &str,
-) -> Result<&'static [u8], ()> {
+async fn handle_http_query(stack: Stack<'_>, query: &str) -> Result<&'static [u8], ()> {
     // Parse the command and arguments
     let full_command = query.split_whitespace().nth(1).unwrap_or("/");
     let (command, full_args) = full_command.split_once('?').unwrap_or((full_command, ""));

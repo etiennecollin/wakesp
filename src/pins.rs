@@ -1,20 +1,20 @@
 use core::cell::RefCell;
-use embassy_sync::blocking_mutex::{raw::CriticalSectionRawMutex, CriticalSectionMutex, Mutex};
-use esp_hal::gpio::{GpioPin, OutputOpenDrain};
+use embassy_sync::blocking_mutex::{CriticalSectionMutex, Mutex, raw::CriticalSectionRawMutex};
+use esp_hal::gpio::OutputOpenDrain;
 
-pub static GPIO2: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, GpioPin<2>>>>> =
+pub static GPIO2: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>> =
     CriticalSectionMutex::new(RefCell::new(None));
-pub static GPIO3: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, GpioPin<3>>>>> =
+pub static GPIO3: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>> =
     CriticalSectionMutex::new(RefCell::new(None));
-pub static GPIO4: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, GpioPin<4>>>>> =
+pub static GPIO4: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>> =
     CriticalSectionMutex::new(RefCell::new(None));
-pub static GPIO5: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, GpioPin<5>>>>> =
+pub static GPIO5: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>> =
     CriticalSectionMutex::new(RefCell::new(None));
-pub static GPIO6: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, GpioPin<6>>>>> =
+pub static GPIO6: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>> =
     CriticalSectionMutex::new(RefCell::new(None));
-pub static GPIO7: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, GpioPin<7>>>>> =
+pub static GPIO7: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>> =
     CriticalSectionMutex::new(RefCell::new(None));
-pub static GPIO8: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, GpioPin<8>>>>> =
+pub static GPIO8: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>> =
     CriticalSectionMutex::new(RefCell::new(None));
-pub static GPIO9: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_, GpioPin<9>>>>> =
+pub static GPIO9: Mutex<CriticalSectionRawMutex, RefCell<Option<OutputOpenDrain<'_>>>> =
     CriticalSectionMutex::new(RefCell::new(None));

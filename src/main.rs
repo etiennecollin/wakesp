@@ -10,32 +10,27 @@ mod utils;
 use core::str::FromStr;
 use dns::dns_updater_task;
 use embassy_executor::Spawner;
-use embassy_net::{Config, DhcpConfig, Stack, StackResources};
+use embassy_net::{Config, DhcpConfig, Runner, StackResources};
 use embassy_time::{Duration, Timer};
+use esp_alloc as _;
 use esp_backtrace as _;
 use esp_hal::{
-    clock::ClockControl,
-    gpio::{Io, Level, OutputOpenDrain, Pull},
-    peripherals::Peripherals,
-    prelude::*,
+    clock::CpuClock,
+    gpio::{Level, OutputOpenDrain, Pull},
     riscv::singleton,
     rng::Rng,
-    system::SystemControl,
-    timer::{
-        systimer::{SystemTimer, Target},
-        timg::TimerGroup,
-    },
+    timer::{systimer::SystemTimer, timg::TimerGroup},
 };
 use esp_hal_embassy as embassy;
 use esp_wifi::{
-    initialize,
+    init,
     wifi::{
         ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
         WifiState,
     },
-    EspWifiInitFor,
 };
 use http_server::http_server_task;
+use log::info;
 use pins::*;
 
 /// The hostname of the device.
@@ -52,7 +47,7 @@ const DNS_ENABLE: &str = env!("DNS_ENABLE");
 /// The HTTP server enable flag.
 const HTTP_SERVER_ENABLE: &str = env!("HTTP_SERVER_ENABLE");
 
-#[main]
+#[esp_hal_embassy::main]
 async fn main(spawner: Spawner) {
     esp_println::logger::init_logger_from_env();
     log::error!("This is error message");
@@ -60,21 +55,23 @@ async fn main(spawner: Spawner) {
     log::info!("This is info message");
 
     // Initialize the peripherals
-    let peripherals = Peripherals::take();
-    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
-    let system = SystemControl::new(peripherals.SYSTEM);
-    let clocks = ClockControl::max(system.clock_control).freeze();
+    let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
+    let peripherals = esp_hal::init(config);
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+    let systimer = SystemTimer::new(peripherals.SYSTIMER);
     let mut rng = Rng::new(peripherals.RNG);
 
+    esp_alloc::heap_allocator!(72 * 1024);
+
     // Initialize GPIO pins
-    let gpio2 = OutputOpenDrain::new(io.pins.gpio2, Level::High, Pull::Up);
-    let gpio3 = OutputOpenDrain::new(io.pins.gpio3, Level::High, Pull::Up);
-    let gpio4 = OutputOpenDrain::new(io.pins.gpio4, Level::High, Pull::Up);
-    let gpio5 = OutputOpenDrain::new(io.pins.gpio5, Level::High, Pull::Up);
-    let gpio6 = OutputOpenDrain::new(io.pins.gpio6, Level::High, Pull::Up);
-    let gpio7 = OutputOpenDrain::new(io.pins.gpio7, Level::High, Pull::Up);
-    let gpio8 = OutputOpenDrain::new(io.pins.gpio8, Level::High, Pull::Up);
-    let gpio9 = OutputOpenDrain::new(io.pins.gpio9, Level::High, Pull::Up);
+    let gpio2 = OutputOpenDrain::new(peripherals.GPIO2, Level::High, Pull::Up);
+    let gpio3 = OutputOpenDrain::new(peripherals.GPIO3, Level::High, Pull::Up);
+    let gpio4 = OutputOpenDrain::new(peripherals.GPIO4, Level::High, Pull::Up);
+    let gpio5 = OutputOpenDrain::new(peripherals.GPIO5, Level::High, Pull::Up);
+    let gpio6 = OutputOpenDrain::new(peripherals.GPIO6, Level::High, Pull::Up);
+    let gpio7 = OutputOpenDrain::new(peripherals.GPIO7, Level::High, Pull::Up);
+    let gpio8 = OutputOpenDrain::new(peripherals.GPIO8, Level::High, Pull::Up);
+    let gpio9 = OutputOpenDrain::new(peripherals.GPIO9, Level::High, Pull::Up);
     GPIO2.lock(|x| x.borrow_mut().replace(gpio2));
     GPIO3.lock(|x| x.borrow_mut().replace(gpio3));
     GPIO4.lock(|x| x.borrow_mut().replace(gpio4));
@@ -84,34 +81,24 @@ async fn main(spawner: Spawner) {
     GPIO8.lock(|x| x.borrow_mut().replace(gpio8));
     GPIO9.lock(|x| x.borrow_mut().replace(gpio9));
 
-    // Generate a seed for the wifi stack
-    let mut seed_buf = [0u8; 8];
-    rng.read(&mut seed_buf);
-    let seed: u64 = u64::from_ne_bytes(seed_buf);
-
     // Initialize the wifi
-    let timer = SystemTimer::new(peripherals.SYSTIMER)
-        .split::<Target>()
-        .alarm0;
-    let init = initialize(
-        EspWifiInitFor::Wifi,
-        timer,
-        rng,
-        peripherals.RADIO_CLK,
-        &clocks,
-    )
+    let wifi_controller = &*singleton!(: esp_wifi::EspWifiController<'static>  = 
+    init(timg0.timer0, rng, peripherals.RADIO_CLK).unwrap())
     .unwrap();
 
     // Set wifi mode
     let (wifi_interface, controller) =
-        esp_wifi::wifi::new_with_mode(&init, peripherals.WIFI, WifiStaDevice).unwrap();
+        esp_wifi::wifi::new_with_mode(wifi_controller, peripherals.WIFI, WifiStaDevice).unwrap();
 
     // If hostname is empty or longer than 32 chars (limit from embassy_net),
     // the device will use the fallback hostname
     let hostname: &str;
     let trimmed_hostname = HOSTNAME.trim();
     if trimmed_hostname.is_empty() {
-        log::warn!("Falling back to default hostname. No hostname was provided");
+        log::warn!(
+            "Falling back to default hostname '{}'. No hostname was provided",
+            HOSTNAME_FALLBACK
+        );
         hostname = HOSTNAME_FALLBACK;
     } else if trimmed_hostname.len() > 32 {
         log::warn!("Falling back to default hostname. Hostname has a maximum length of 32 bytes");
@@ -125,21 +112,24 @@ async fn main(spawner: Spawner) {
     dhcp_config.hostname = Some(heapless::String::from_str(hostname).unwrap());
     let config = Config::dhcpv4(dhcp_config);
 
+    // Generate a seed for the wifi stack
+    let mut seed_buf = [0u8; 8];
+    rng.read(&mut seed_buf);
+    let seed: u64 = u64::from_ne_bytes(seed_buf);
+
     // Create the wifi stack
-    let stack = &*singleton!(:Stack<WifiDevice<'static, WifiStaDevice>> = Stack::new(
+    let (stack, runner) = embassy_net::new(
         wifi_interface,
         config,
         singleton!(:StackResources<8> = StackResources::new()).unwrap(),
-        seed
-    ))
-    .unwrap();
+        seed,
+    );
 
     // Initialize embassy for async tasks
-    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
-    embassy::init(&clocks, timg0.timer0);
+    embassy::init(systimer.alarm0);
 
     spawner.spawn(connection(controller)).ok();
-    spawner.spawn(net_task(stack)).ok();
+    spawner.spawn(net_task(runner)).ok();
     if DNS_ENABLE == "true" || DNS_ENABLE == "1" {
         spawner.spawn(dns_updater_task(stack)).ok();
     }
@@ -151,12 +141,9 @@ async fn main(spawner: Spawner) {
 #[embassy_executor::task]
 async fn connection(mut controller: WifiController<'static>) {
     log::info!("SYS | Started connection task");
-    log::info!(
-        "SYS | Device capabilities: {:?}",
-        controller.get_capabilities()
-    );
+    log::info!("SYS | Device capabilities: {:?}", controller.capabilities());
     loop {
-        if esp_wifi::wifi::get_wifi_state() == WifiState::StaConnected {
+        if esp_wifi::wifi::wifi_state() == WifiState::StaConnected {
             // Wait until we're no longer connected
             controller.wait_for_event(WifiEvent::StaDisconnected).await;
             Timer::after(Duration::from_millis(5000)).await
@@ -170,12 +157,12 @@ async fn connection(mut controller: WifiController<'static>) {
             });
             controller.set_configuration(&client_config).unwrap();
             log::info!("SYS | Starting wifi...");
-            controller.start().await.unwrap();
+            controller.start().unwrap();
             log::info!("SYS | Wifi started!");
         }
         log::info!("SYS | About to connect...");
 
-        match controller.connect().await {
+        match controller.connect() {
             Ok(_) => log::info!("SYS | Wifi connected!"),
             Err(e) => {
                 log::error!("SYS | Failed to connect to wifi: {e:?}");
@@ -186,6 +173,6 @@ async fn connection(mut controller: WifiController<'static>) {
 }
 
 #[embassy_executor::task]
-async fn net_task(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) {
-    stack.run().await
+async fn net_task(mut runner: Runner<'static, WifiDevice<'static, WifiStaDevice>>) {
+    runner.run().await
 }
