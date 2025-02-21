@@ -1,5 +1,7 @@
 # wakesp
 
+![menu](./assets/menu.png)
+
 <!-- vim-markdown-toc GFM -->
 
 - [Features](#features)
@@ -22,6 +24,10 @@ Wakesp (from the words `wake` and `esp`) is a versatile firmware project for ESP
 - **Rust:** Benefit from the safety and performance of Rust.
 - **Small Footprint:** Wakesp currently uses less than 500kB of flash memory.
 - **ESP32 compatible:** Designed specifically for the ESP32 microcontrollers thanks to the [esp-hal](https://github.com/esp-rs/esp-hal).
+
+|                          |                                |
+| ------------------------ | ------------------------------ |
+| ![wol](./assets/wol.png) | ![switch](./assets/switch.png) |
 
 ## Requirements
 
